@@ -107,7 +107,7 @@ module BrLiteRouter
 	);
 
 	always_comb begin
-		for(int i = 0; i < NPORT; i++)
+		for (int i = 0; i < NPORT; i++)
 			flit_o[i] = cam[selected_index].data;
 	end
 
@@ -117,13 +117,13 @@ module BrLiteRouter
 	// Check if CAM has space available
 	always_comb begin
 		is_full = 1'b1;
-		for(int i = 0; i < CAM_SIZE; i++)
+		for (int i = 0; i < CAM_SIZE; i++)
 			is_full &= cam[i].used;
 	end
 
 	// Check if incoming data is present in each table position
 	always_comb begin
-		for(int i = 0; i < CAM_SIZE; i++) begin
+		for (int i = 0; i < CAM_SIZE; i++) begin
 			is_in_idx[i] = (
 				(cam[i].data.source == flit_i[selected_port].source) && 
 				(cam[i].data.id == flit_i[selected_port].id)
@@ -132,15 +132,15 @@ module BrLiteRouter
 	end
 
 	always_comb begin
-		for(int i = 0; i < CAM_SIZE; i++)
+		for (int i = 0; i < CAM_SIZE; i++)
 			is_pending_idx[i] = (cam[i].used && cam[i].pending);
 	end
 
 	// Beautiful synthesizable SystemVerilog code:
 	always_comb begin
 		free_index = '0;
-		for(int i = 0; i < CAM_SIZE; i++) begin
-			if(!cam[i].used) begin
+		for (int i = 0; i < CAM_SIZE; i++) begin
+			if (!cam[i].used) begin
 				free_index = cam_idx_t'(i);
 				break;
 			end
@@ -150,8 +150,8 @@ module BrLiteRouter
 	// Beautiful synthesizable SystemVerilog code:
 	always_comb begin
 		source_index = '0;
-		for(int i = 0; i < CAM_SIZE; i++) begin
-			if(is_in_idx[i]) begin
+		for (int i = 0; i < CAM_SIZE; i++) begin
+			if (is_in_idx[i]) begin
 				source_index = cam_idx_t'(i);
 				break;
 			end
@@ -159,21 +159,21 @@ module BrLiteRouter
 	end
 
 	always_comb begin
-		logic found = 1'b0;
+		automatic logic found = 1'b0;
 		next_port = EAST;
-		for(int i = 0; i < NPORT; i++) begin
-			if(i <= selected_port) begin
+		for (int i = 0; i < NPORT; i++) begin
+			if (i <= selected_port) begin
 				continue;
-			end else if(req_i[i]) begin
+			end else if (req_i[i]) begin
 				found = 1'b1;
 				next_port = br_port_t'(i);
 				break;
 			end
 		end
 
-		if(!found) begin
-			for(int i = 0; i < NPORT; i++) begin
-				if(req_i[i]) begin
+		if (!found) begin
+			for (int i = 0; i < NPORT; i++) begin
+				if (req_i[i]) begin
 					next_port = br_port_t'(i);
 					break;
 				end
@@ -182,21 +182,21 @@ module BrLiteRouter
 	end
 
 	always_comb begin
-		logic found = 1'b0;
+		automatic logic found = 1'b0;
 		next_index = '0;
-		for(int i = 0; i < CAM_SIZE; i++) begin
-			if(i <= selected_index) begin
+		for (int i = 0; i < CAM_SIZE; i++) begin
+			if (i <= selected_index) begin
 				continue;
-			end else if(is_pending_idx[i]) begin
+			end else if (is_pending_idx[i]) begin
 				found = 1'b1;
 				next_index = cam_idx_t'(i);
 				break;
 			end
 		end
 
-		if(!found) begin
-			for(int i = 0; i < CAM_SIZE; i++) begin
-				if(is_pending_idx[i]) begin
+		if (!found) begin
+			for (int i = 0; i < CAM_SIZE; i++) begin
+				if (is_pending_idx[i]) begin
 					next_index = cam_idx_t'(i);
 					break;
 				end
@@ -208,19 +208,19 @@ module BrLiteRouter
 	always_comb begin
 		unique case(in_cs)
 			IN_INIT:
-				if(!clear_local && has_request)
+				if (!clear_local && has_request)
 					in_ns = IN_ARBITRATION;
 				else
 					in_ns = IN_INIT;
 			IN_ARBITRATION:
 				in_ns = IN_TEST_SPACE;
 			IN_TEST_SPACE:
-				if(should_write)
-					if(!is_full)
+				if (should_write)
+					if (!is_full)
 						in_ns = IN_WRITE;
 					else
 						in_ns = IN_INIT;
-				else if(
+				else if (
 					flit_i[selected_port].service == BR_SVC_CLEAR &&
 					is_in_table
 					/* && not pending no SystemC, que não está no VHDL. Acho que deve ficar sem por enquanto. */
@@ -229,7 +229,7 @@ module BrLiteRouter
 				else 
 					in_ns = IN_ACK;
 			IN_ACK:
-				if(!req_i[selected_port])
+				if (!req_i[selected_port])
 					in_ns = IN_INIT;
 				else
 					in_ns = IN_ACK;
@@ -242,14 +242,14 @@ module BrLiteRouter
 	always_comb begin
 		unique case(out_cs)
 			OUT_INIT:
-				if(has_pending && !clear_local)
+				if (has_pending && !clear_local)
 					out_ns = OUT_ARBITRATION;
 				else
 					out_ns = OUT_INIT;
 			OUT_ARBITRATION:
 				out_ns = OUT_SERVICE;
 			OUT_SERVICE:
-				if(
+				if (
 					cam[selected_index].data.service == BR_SVC_TGT && 
 					cam[selected_index].data.target == 16'(ADDRESS)
 				)
@@ -259,8 +259,8 @@ module BrLiteRouter
 			OUT_PROPAGATE:
 				out_ns = OUT_ACK_ALL;
 			OUT_ACK_ALL:
-				if(acked_ports == '1)
-					if(cam[selected_index].data.service == BR_SVC_CLEAR)
+				if (acked_ports == '1)
+					if (cam[selected_index].data.service == BR_SVC_CLEAR)
 						out_ns = OUT_CLEAR;
 					else
 						out_ns = OUT_INIT;
@@ -269,12 +269,12 @@ module BrLiteRouter
 			OUT_CLEAR:
 				out_ns = OUT_INIT;
 			OUT_LOCAL:
-				if(ack_i[LOCAL])
+				if (ack_i[LOCAL])
 					out_ns = OUT_ACK_LOCAL;
 				else
 					out_ns = OUT_LOCAL;
 			OUT_ACK_LOCAL:
-				if(!ack_i[LOCAL])
+				if (!ack_i[LOCAL])
 					out_ns = OUT_INIT;
 				else
 					out_ns = OUT_ACK_LOCAL;
@@ -283,7 +283,7 @@ module BrLiteRouter
 
 	// Input FSM state change
 	always_ff @(posedge clk_i or negedge rst_ni) begin
-		if(!rst_ni)
+		if (!rst_ni)
 			in_cs <= IN_INIT;
 		else
 			in_cs <= in_ns;
@@ -291,7 +291,7 @@ module BrLiteRouter
 
 	// Output FSM state change
 	always_ff @(posedge clk_i or negedge rst_ni) begin
-		if(!rst_ni)
+		if (!rst_ni)
 			out_cs <= OUT_INIT;
 		else
 			out_cs <= out_ns;
@@ -299,11 +299,10 @@ module BrLiteRouter
 
 	// Input control
 	always_ff @(posedge clk_i or negedge rst_ni) begin
-		if(!rst_ni) begin
-			for(int i = 0; i < NPORT; i++)
+		if (!rst_ni) begin
+			for (int i = 0; i < NPORT; i++)
 				ack_o[i] <= 1'b0;
 
-			in_cs <= IN_INIT;
 			selected_port <= LOCAL;
 		end
 		else begin
@@ -313,7 +312,7 @@ module BrLiteRouter
 				IN_ARBITRATION:
 					selected_port <= next_port;
 				IN_TEST_SPACE:
-					if(should_write && is_full)
+					if (should_write && is_full)
 						$warning("++++++++++++++++++++++++++++++++++ PE %h: CAM IS FULL", ADDRESS);
 				IN_ACK:
 					ack_o[selected_port] <= 1'b1; // ACK ocorre antes no SystemC
@@ -324,7 +323,7 @@ module BrLiteRouter
 
 	// Output control
 	always_ff @(posedge clk_i or negedge rst_ni)  begin
-		if(!rst_ni) begin
+		if (!rst_ni) begin
 			req_o <= '0;
 
 			acked_ports <= '0;
@@ -352,7 +351,7 @@ module BrLiteRouter
 					req_o <= req_o & ~ack_i;
 				end
 				OUT_CLEAR: begin
-					if(cam[selected_index].data.target == 16'(ADDRESS) && cam[selected_index].used) begin
+					if (cam[selected_index].data.target == 16'(ADDRESS) && cam[selected_index].used) begin
 						$display(
 							"************************************************************ end CLEAR: %x %x %x %x", 
 							cam[selected_index].data.source, 
@@ -374,7 +373,7 @@ module BrLiteRouter
 
 	// CAM Control
 	always_ff @(posedge clk_i or negedge rst_ni) begin
-		if(!rst_ni) begin
+		if (!rst_ni) begin
 			wrote_local <= 1'b0;
 			clear_tick <= '0;
 			clear_index <= '0;
@@ -387,14 +386,14 @@ module BrLiteRouter
 					cam[free_index].used <= 1'b1;
 					cam[free_index].pending <= 1'b1;
 
-					if(selected_port == LOCAL) begin
+					if (selected_port == LOCAL) begin
 						wrote_local <= 1'b1;
 						clear_index <= free_index;
 						clear_tick  <= tick_cnt_i + CLEAR_TICKS;
 					end
 				end
 				IN_CLEAR:
-					if(
+					if (
 						cam[source_index].data.service != BR_SVC_CLEAR && 
 						!cam[source_index].pending
 					) begin
@@ -413,12 +412,12 @@ module BrLiteRouter
 			endcase
 
 			// SystemC also unsets wrote_local
-			if(wrote_local && clear_tick < tick_cnt_i)
+			if (wrote_local && clear_tick < tick_cnt_i)
 				clear_local <= 1'b1;
 
 			// SystemC uses clear_local instead of wrote_local
 			// SystemC is not verifying if cam is pending
-			if(wrote_local && !cam[clear_index].pending && in_cs == IN_INIT && out_cs == OUT_INIT) begin
+			if (wrote_local && !cam[clear_index].pending && in_cs == IN_INIT && out_cs == OUT_INIT) begin
 				wrote_local <= 1'b0;
 				clear_local <= 1'b0;
 				cam[clear_index].data.service <= BR_SVC_CLEAR;
