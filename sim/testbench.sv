@@ -96,7 +96,7 @@ module testbench ();
 				end
 			end
 
-			if (services[NPKTS - 1][0] + 300 < tick_cnt) begin
+			if (services[NPKTS - 1].timestamp + 3000 < tick_cnt) begin
 				$display("---END SIMULATION------- %d", services[NPKTS - 1][0]);
 				$fclose(fd);
 				$finish();
