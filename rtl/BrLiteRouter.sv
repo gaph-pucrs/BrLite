@@ -85,7 +85,7 @@ module BrLiteRouter
 	br_port_t next_port;
 	in_fsm_t in_cs, in_ns;
 	out_fsm_t out_cs, out_ns;
-	cam_line_t [(CAM_SIZE - 1):0] cam;
+	cam_line_t [(CAM_SIZE - 1):0] cam = '0;
 
 	assign propagate_local = (
 		cam[selected_index].data.service == BR_SVC_ALL && 
@@ -324,14 +324,13 @@ module BrLiteRouter
 	// Output control
 	always_ff @(posedge clk_i or negedge rst_ni)  begin
 		if (!rst_ni) begin
-			req_o <= '0;
-
-			acked_ports <= '0;
+			req_o 			<= '0;
+			acked_ports 	<= '0;
+			selected_index 	<= '0;
 		end else begin
 			unique case(out_cs)
 				OUT_INIT: begin
-					req_o <= '0;
-
+					req_o 		<= '0;
 					acked_ports <= '0;
 				end
 				OUT_ARBITRATION: begin
@@ -340,15 +339,15 @@ module BrLiteRouter
 				OUT_PROPAGATE: begin
 					req_o <= '1;
 
-					req_o[cam[selected_index].origin] <= 1'b0;					
+					req_o[cam[selected_index].origin] 		<= 1'b0;					
 					acked_ports[cam[selected_index].origin] <= 1'b1;
 
-					req_o[LOCAL] <= propagate_local;
-					acked_ports[LOCAL] <= ~propagate_local;
+					req_o[LOCAL] 		<= propagate_local;
+					acked_ports[LOCAL] 	<= ~propagate_local;
 				end
 				OUT_ACK_ALL: begin
 					acked_ports <= acked_ports | ack_i;
-					req_o <= req_o & ~ack_i;
+					req_o 		<= req_o & ~ack_i;
 				end
 				OUT_CLEAR: begin
 					if (cam[selected_index].data.target == 16'(ADDRESS) && cam[selected_index].used) begin
@@ -375,7 +374,8 @@ module BrLiteRouter
 	always_ff @(posedge clk_i or negedge rst_ni) begin
 		if (!rst_ni) begin
 			wrote_local <= 1'b0;
-			clear_tick <= '0;
+			clear_local <= 1'b0;
+			clear_tick  <= '0;
 			clear_index <= '0;
 		end
 		else begin
