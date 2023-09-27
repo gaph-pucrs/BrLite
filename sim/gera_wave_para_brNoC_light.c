@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <strings.h>
+#include <string.h>
 
 #define TAM 200
 
@@ -82,22 +82,23 @@ int main(int argc, char *argv[])
   if (argc==2) d=1;
 
    // parser do cenario para encontrar o tamanho do sistema  //////////////////////////////////////
-   if ((fp = fopen( "scenario.vhd", "r")) == NULL) { printf("Erro abrindo o arquivo cenario.vhd !\n");  return 0; }
+   if ((fp = fopen( "cenario.vhd", "r")) == NULL) { printf("Erro abrindo o arquivo cenario.vhd !\n");  return 0; }
    while (getline_moraes(line, TAM, fp))
      {   
         for(i=d=0; d<5; d++)
           search_word(line, &i, wd[d]);
 
-        if( !strcasecmp(wd[1], "X_CNT"))
+        if( !strcasecmp(wd[1], "PEsX"))
             sscanf(wd[3], "%d", &x );
 
-        if( !strcasecmp(wd[1], "Y_CNT"))
+        if( !strcasecmp(wd[1], "PEsY"))
              sscanf(wd[3], "%d", &y );
      }
    fclose(fp);
 
    PEs = x * y;
 
+  printf("%d %d %d\n", x, y, PEs);
 
   if ((fp = fopen( "wave.do", "w")) == NULL) { printf("Erro abrindo o arquivo  !\n");  return 0; }
 
@@ -158,7 +159,7 @@ int main(int argc, char *argv[])
 
 
 
-   ////////////////////////////////////////////////// determina o número de pacotes total
+   ////////////////////////////////////////////////// determina o número de pacotes totalAAAAAAAAA
    nb_pacotes = 0;
    for(pe=0; pe<PEs; pe++) {
 
@@ -184,10 +185,10 @@ int main(int argc, char *argv[])
          fclose(fp);
     }
 
-    pacotes=  calloc(nb_pacotes, sizeof(pck));
+    pacotes=  calloc(nb_pacotes+1, sizeof(pck));
+    
     nb_pacotes = 0;
-
-
+    
     ////////////////////////////////////////////////// monta a estrutura da dados 
     for(pe=0; pe<PEs; pe++) {
 
@@ -246,7 +247,7 @@ int main(int argc, char *argv[])
             search_word(line, &i, word);   // src
             sscanf( word, "%d", &lsrc );
             search_word(line, &i, lpld);   // payload
-            search_word(line, &i, word);   // t
+            search_word(line, &i, word);   // tgetline_moraes
             search_word(line, &i, word);   // timestamp
             sscanf( word, "%d", &lstamp );
 

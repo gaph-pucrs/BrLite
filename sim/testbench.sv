@@ -10,7 +10,7 @@ module testbench ();
 
 	logic clk=1, rst_n;
 
-	logic 	  		  [31:0] 		tick_cnt;
+	logic 	  [        31:0] 		tick_cnt;
 	br_data_t [PE_CNT - 1:0] 		flit_i;
 	logic 	  [PE_CNT - 1:0] 		req_i;
 	logic 	  [PE_CNT - 1:0] 		ack_o;
@@ -18,7 +18,7 @@ module testbench ();
 	logic 	  [PE_CNT - 1:0] 		req_o;
 	logic 	  [PE_CNT - 1:0] 		ack_i;
 	logic 	  [PE_CNT - 1:0] 		busy;
-	logic	  [  NSVC - 1:0] 		useds;
+	logic	  [ NPKTS - 1:0] 		useds;
 	logic	  [PE_CNT - 1:0][4:0] 	ids;
 
 	int fd;
@@ -64,27 +64,29 @@ module testbench ();
 	always_ff @(posedge clk or negedge rst_n) begin
 		if (rst_n == 1'b0) begin
 			req_i 	<= '0;
+			flit_i  <= '0;
 			ids 	<= '0;
 			useds 	<= '0;			
 		end else begin
-			for (int i = 0; i < NSVC; i++) begin
-				if (services[i][0] >= tick_cnt && !useds[i] && !busy[services[i][1]]) begin
-					req_i[services[i][1]] 			<= 1'b1;
-					flit_i[services[i][1]].source 	<= to_xy(services[i][1]);
-					flit_i[services[i][1]].target 	<= to_xy(services[i][2]);
-					flit_i[services[i][1]].payload 	<= services[i][3];
-					flit_i[services[i][1]].service 	<= br_svc_t'(services[i][4]);
-					flit_i[services[i][1]].id 		<= ids[services[i][1]];
-					ids[services[i][1]] 			<= ids[services[i][1]] + 1'b1;
-					useds[i] 						<= 1'b1;
+			for (int i = 0; i < NPKTS; i++) begin
+				if (tick_cnt >= services[i].timestamp && !useds[i] && !busy[services[i].source]) begin
+					req_i[services[i].source] 			<= 1'b1;
+					flit_i[services[i].source].source 	<= to_xy(services[i].source);
+					flit_i[services[i].source].target 	<= to_xy(services[i].target);
+					flit_i[services[i].source].payload 	<= services[i].payload;
+					flit_i[services[i].source].service 	<= br_svc_t'(services[i].service);
+					flit_i[services[i].source].id 		<= ids[services[i].source];
+					ids[services[i].source] 			<= ids[services[i].source] + 1'b1;
+					useds[i] 							<= 1'b1;
 
-					$display(
+					$display("[%0t] Injected - services[%0d] - timestamp = %0d - source %0d - target %0d", $time, i, services[i].timestamp, services[i].source, services[i].target);
+					/*$display(
 						"-----------------------------------------  INSERT SERVICE %d %d %d %d",
-						services[i][1],
-						services[i][2],
-						services[i][3],
-						services[i][4]
-					);
+						services[i].source,
+						services[i].target,
+						services[i].payload,
+						services[i].service
+					);*/
 				end
 			end
 
@@ -94,8 +96,8 @@ module testbench ();
 				end
 			end
 
-			if (services[NSVC - 1][0] + 300 < tick_cnt) begin
-				$display("---END SIMULATION------- %d", services[NSVC - 1][0]);
+			if (services[NPKTS - 1][0] + 300 < tick_cnt) begin
+				$display("---END SIMULATION------- %d", services[NPKTS - 1][0]);
 				$fclose(fd);
 				$finish();
 			end
@@ -106,6 +108,7 @@ module testbench ();
 	always_ff @(posedge clk or negedge rst_n) begin
 		if (rst_n == 1'b0) begin
 			prev_ack 	<= '0;
+			ack_i 		<= '0;			
 		end else begin
 			prev_ack 	<= req_o;
 			ack_i 		<= prev_ack;			
@@ -119,7 +122,7 @@ module testbench ();
 			always_ff @(posedge req_o[gen_i]) begin
 				$fdisplay(
 					fd, 
-					"%s %d   from: %d  %H  t:%d", 
+					"%s %d   from: %d  %0H  t:%d", 
 					flit_o[gen_i].service == BR_SVC_ALL ? "ALL" : "TGT", 
 					gen_i,
 					((flit_o[gen_i].source >> 8) + ((flit_o[gen_i].source & 16'h00FF)*X_CNT)), 
