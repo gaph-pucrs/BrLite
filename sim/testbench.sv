@@ -10,7 +10,7 @@ module testbench ();
 
 	logic clk=1, rst_n;
 
-	logic 	  [        31:0] 		tick_cnt;
+	logic 	  [        63:0] 		tick_cnt;
 	br_data_t [PE_CNT - 1:0] 		flit_i;
 	logic 	  [PE_CNT - 1:0] 		req_i;
 	logic 	  [PE_CNT - 1:0] 		ack_o;

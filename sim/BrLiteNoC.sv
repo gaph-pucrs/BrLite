@@ -8,7 +8,7 @@ module BrLiteNoC
 	input  logic 	 				 clk_i,
 	input  logic 	 				 rst_ni,
 
-	input  logic 	 [31:0]			 tick_cnt_i,
+	input  logic 	 [63:0]			 tick_cnt_i,
 
 	input  br_data_t [X_CNT * Y_CNT - 1:0] flit_i,
 	input  logic	 [X_CNT * Y_CNT - 1:0] req_i,
@@ -56,51 +56,51 @@ module BrLiteNoC
 				automatic int index = x*Y_CNT + y;
 
 				if (x != X_CNT - 1) begin
-					flit_i_sig[index][EAST] = flit_o_sig[index + Y_CNT][WEST];
-					req_i_sig[index][EAST] = req_o_sig[index + Y_CNT][WEST];
-					ack_i_sig[index][EAST] = ack_o_sig[index + Y_CNT][WEST];
+					flit_i_sig[index][BR_EAST] = flit_o_sig[index + Y_CNT][BR_WEST];
+					req_i_sig[index][BR_EAST] = req_o_sig[index + Y_CNT][BR_WEST];
+					ack_i_sig[index][BR_EAST] = ack_o_sig[index + Y_CNT][BR_WEST];
 				end else begin
-					flit_i_sig[index][EAST] = '0;
-					req_i_sig[index][EAST] = '0;
-					ack_i_sig[index][EAST] = '1;
+					flit_i_sig[index][BR_EAST] = '0;
+					req_i_sig[index][BR_EAST] = '0;
+					ack_i_sig[index][BR_EAST] = '1;
 				end
 
 				if (x != 0) begin
-					flit_i_sig[index][WEST] = flit_o_sig[index - Y_CNT][EAST];
-					req_i_sig[index][WEST] = req_o_sig[index - Y_CNT][EAST];
-					ack_i_sig[index][WEST] = ack_o_sig[index - Y_CNT][EAST];
+					flit_i_sig[index][BR_WEST] = flit_o_sig[index - Y_CNT][BR_EAST];
+					req_i_sig[index][BR_WEST] = req_o_sig[index - Y_CNT][BR_EAST];
+					ack_i_sig[index][BR_WEST] = ack_o_sig[index - Y_CNT][BR_EAST];
 				end else begin
-					flit_i_sig[index][WEST] = '0;
-					req_i_sig[index][WEST] = '0;
-					ack_i_sig[index][WEST] = '1;
+					flit_i_sig[index][BR_WEST] = '0;
+					req_i_sig[index][BR_WEST] = '0;
+					ack_i_sig[index][BR_WEST] = '1;
 				end
 
 				if (y != Y_CNT - 1) begin
-					flit_i_sig[index][NORTH] = flit_o_sig[index + 1][SOUTH];
-					req_i_sig[index][NORTH] = req_o_sig[index + 1][SOUTH];
-					ack_i_sig[index][NORTH] = ack_o_sig[index + 1][SOUTH];
+					flit_i_sig[index][BR_NORTH] = flit_o_sig[index + 1][BR_SOUTH];
+					req_i_sig[index][BR_NORTH] = req_o_sig[index + 1][BR_SOUTH];
+					ack_i_sig[index][BR_NORTH] = ack_o_sig[index + 1][BR_SOUTH];
 				end else begin
-					flit_i_sig[index][NORTH] = '0;
-					req_i_sig[index][NORTH] = '0;
-					ack_i_sig[index][NORTH] = '1;
+					flit_i_sig[index][BR_NORTH] = '0;
+					req_i_sig[index][BR_NORTH] = '0;
+					ack_i_sig[index][BR_NORTH] = '1;
 				end
 
 				if (y != 0) begin
-					flit_i_sig[index][SOUTH] = flit_o_sig[index - 1][NORTH];
-					req_i_sig[index][SOUTH] = req_o_sig[index - 1][NORTH];
-					ack_i_sig[index][SOUTH] = ack_o_sig[index - 1][NORTH];
+					flit_i_sig[index][BR_SOUTH] = flit_o_sig[index - 1][BR_NORTH];
+					req_i_sig[index][BR_SOUTH] = req_o_sig[index - 1][BR_NORTH];
+					ack_i_sig[index][BR_SOUTH] = ack_o_sig[index - 1][BR_NORTH];
 				end else begin
-					flit_i_sig[index][SOUTH] = '0;
-					req_i_sig[index][SOUTH] = '0;
-					ack_i_sig[index][SOUTH] = '1;
+					flit_i_sig[index][BR_SOUTH] = '0;
+					req_i_sig[index][BR_SOUTH] = '0;
+					ack_i_sig[index][BR_SOUTH] = '1;
 				end
 
-				flit_i_sig[index][LOCAL] = flit_i[index];
-				req_i_sig[index][LOCAL] = req_i[index];
-				ack_o[index] = ack_o_sig[index][LOCAL];
-				flit_o[index] = flit_o_sig[index][LOCAL];
-				req_o[index] = req_o_sig[index][LOCAL];
-				ack_i_sig[index][LOCAL] = ack_i[index];
+				flit_i_sig[index][BR_LOCAL] = flit_i[index];
+				req_i_sig[index][BR_LOCAL] = req_i[index];
+				ack_o[index] = ack_o_sig[index][BR_LOCAL];
+				flit_o[index] = flit_o_sig[index][BR_LOCAL];
+				req_o[index] = req_o_sig[index][BR_LOCAL];
+				ack_i_sig[index][BR_LOCAL] = ack_i[index];
 			end
 		end
 	end
