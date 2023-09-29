@@ -119,6 +119,7 @@ module BrLiteRouter
             is_in_idx[i] = (
                 (cam[i].data.source == flit_i[selected_port].source) 
                 && (cam[i].data.id  == flit_i[selected_port].id)
+                && cam[i].used /* Addition not present in VHDL */
             );
         end
     end
@@ -151,7 +152,11 @@ module BrLiteRouter
                     end
                 end
                 else if (flit_i[selected_port].service == BR_SVC_CLEAR && is_in_idx != '0) begin
-                    /* && not pending no SystemC, que não está no VHDL. Acho que deve ficar sem por enquanto. */
+                    /**
+                     * @todo
+                     * SystemC implementation uses !pending too
+                     * Try without this condition for now
+                     */
                     in_next_state = IN_CLEAR;
                 end
                 else begin
@@ -159,8 +164,9 @@ module BrLiteRouter
                     in_next_state = IN_ACK;
                 end
             end
-            IN_ACK:         in_next_state = !req_i[selected_port] ? IN_INIT : IN_ACK;
+            IN_WRITE,
             IN_CLEAR:       in_next_state = IN_ACK;
+            IN_ACK:         in_next_state = !req_i[selected_port] ? IN_INIT : IN_ACK; /* Do we really need to wait for req down? */
             default:        in_next_state = IN_INIT;
         endcase
     end
