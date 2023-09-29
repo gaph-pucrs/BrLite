@@ -16,7 +16,7 @@ module BrLiteRouter
 #(
     parameter logic [15:0] ADDRESS = 0,
     parameter 			   CAM_SIZE = 8,
-    parameter 			   CLEAR_TICKS = 180
+    parameter 			   CLEAR_TICKS = 150
 )
 (
     input  logic 					 clk_i,
@@ -432,7 +432,7 @@ module BrLiteRouter
         else begin
             if (can_clear)
                 clear_local <= 1'b0;
-            else if (wrote_local && clear_tick >= tick_cnt_i)
+            else if (wrote_local && tick_cnt_i >= clear_tick)
                 clear_local <= 1'b1; // SystemC also unsets wrote_local
         end
     end
