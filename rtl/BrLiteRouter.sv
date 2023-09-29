@@ -113,7 +113,7 @@ module BrLiteRouter
     end
 
     /* Check if incoming data is present in each table position */
-    logic [CAM_SIZE - 1 : 0] is_in_idx;
+    logic [(CAM_SIZE - 1):0] is_in_idx;
     always_comb begin
         for (int i = 0; i < CAM_SIZE; i++) begin
             is_in_idx[i] = (
@@ -206,7 +206,7 @@ module BrLiteRouter
     out_fsm_t out_state;
 
     /* Line pending to transmit */
-    cam_idx_t is_pending;
+    logic [(CAM_SIZE - 1): 0] is_pending;
     always_comb begin
         for (int i = 0; i < CAM_SIZE; i++)
             is_pending[i] = (cam[i].used && cam[i].pending);
