@@ -288,7 +288,7 @@ module BrLiteRouter
                 : OUT_PROPAGATE;
             OUT_PROPAGATE:   out_next_state = OUT_ACK_ALL;
             OUT_LOCAL: begin
-                out_next_state = ack_i[BR_LOCAL] ? OUT_INIT : OUT_LOCAL;
+                out_next_state = ack_i[BR_LOCAL] ? OUT_ACK_LOCAL : OUT_LOCAL;
                 
                 if (ack_i[BR_LOCAL]) begin
                     $display(
@@ -329,9 +329,9 @@ module BrLiteRouter
     always_comb begin
         req_o = '0;
         case (out_state)
-            OUT_ACK_LOCAL: req_o[BR_LOCAL] = 1'b1;
-            OUT_ACK_ALL:   req_o = ~acked_ports;
-            default:       req_o = '0;
+            OUT_LOCAL:   req_o[BR_LOCAL] = 1'b1;
+            OUT_ACK_ALL: req_o = ~acked_ports;
+            default:     req_o = '0;
         endcase
     end
 
