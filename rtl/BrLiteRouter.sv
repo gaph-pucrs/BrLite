@@ -261,11 +261,11 @@ module BrLiteRouter
         else begin
             case (out_state)
                 OUT_PROPAGATE: begin
-                    acked_ports[cam[selected_index].origin] <= 1'b1;
                     acked_ports[BR_LOCAL] 	<= !(
                         cam[selected_index].data.service == BR_SVC_ALL 
                         && cam[selected_index].data.source != ADDRESS
                     );
+                    acked_ports[cam[selected_index].origin] <= 1'b1; /* Should be after LOCAL because ORIGIN can be local */
                 end
                 OUT_ACK_ALL:   acked_ports <= acked_ports | ack_i;
                 default:       acked_ports <= '0;
