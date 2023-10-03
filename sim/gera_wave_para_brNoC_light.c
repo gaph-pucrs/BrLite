@@ -18,7 +18,7 @@ typedef struct pc { char service[4];
 int separador(char car)
  {
   switch(car)
-   { case ' ': case ':': case '=': case ')': case '(': case ',': case '\n': case '\t': case '\r': return 1;
+   { case ' ': case ':': case '=': case ')': case '(': case ',': case '\n': case '\t': case '\r': case '\'': case '{': case '}': return 1;
      default: return 0;
    }
 }
@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
 {
   FILE *fp;     
   int PEs, i, d, pe, x, y, nb_pacotes, cont_excess_packets, cont_errors;
-  char line[TAM], wd[5][TAM], word[10];
+  char line[TAM], wd[6][TAM], word[10];
   pck *pacotes;
 
   cont_excess_packets =  cont_errors = 0 ;
@@ -82,17 +82,17 @@ int main(int argc, char *argv[])
   if (argc==2) d=1;
 
    // parser do cenario para encontrar o tamanho do sistema  //////////////////////////////////////
-   if ((fp = fopen( "cenario.vhd", "r")) == NULL) { printf("Erro abrindo o arquivo cenario.vhd !\n");  return 0; }
+   if ((fp = fopen( "scenario.sv", "r")) == NULL) { printf("Erro abrindo o arquivo scenario.sv !\n");  return 0; }
    while (getline_moraes(line, TAM, fp))
      {   
         for(i=d=0; d<5; d++)
           search_word(line, &i, wd[d]);
 
-        if( !strcasecmp(wd[1], "PEsX"))
-            sscanf(wd[3], "%d", &x );
+        if( !strcasecmp(wd[1], "X_CNT"))
+            sscanf(wd[2], "%d", &x );
 
-        if( !strcasecmp(wd[1], "PEsY"))
-             sscanf(wd[3], "%d", &y );
+        if( !strcasecmp(wd[1], "Y_CNT"))
+             sscanf(wd[2], "%d", &y );
      }
    fclose(fp);
 
@@ -163,20 +163,20 @@ int main(int argc, char *argv[])
    nb_pacotes = 0;
    for(pe=0; pe<PEs; pe++) {
 
-         fp = fopen( "cenario.vhd", "r");
+         fp = fopen( "scenario.sv", "r");
 
          while (getline_moraes(line, TAM, fp))
-           {   
-              for(i=d=0; d<5; d++)
+           {
+              for(i=d=0; d<6; d++)
                   search_word(line, &i, wd[d]);
-
-              if( !strcasecmp(wd[4], "brALL_SERVICE"))
+              
+              if( !strcasecmp(wd[5], "BR_SVC_ALL"))
                  { sscanf(wd[1], "%d", &d );
                      if(d != pe)
                         nb_pacotes++;
                  }
 
-               if( !strcasecmp(wd[4], "brTgt_SERVICE"))
+               if( !strcasecmp(wd[5], "BR_SVC_TGT"))
                  { sscanf(wd[2], "%d", &d );
                      if(d == pe)
                        nb_pacotes++;
@@ -192,22 +192,22 @@ int main(int argc, char *argv[])
     ////////////////////////////////////////////////// monta a estrutura da dados 
     for(pe=0; pe<PEs; pe++) {
 
-         fp = fopen( "cenario.vhd", "r");
+         fp = fopen( "scenario.sv", "r");
 
          while (getline_moraes(line, TAM, fp))
            {   
-              for(i=d=0; d<5; d++)
+              for(i=d=0; d<6; d++)
                   search_word(line, &i, wd[d]);
 
               sscanf(wd[1], "%d", &(pacotes[nb_pacotes].src) );
               pacotes[nb_pacotes].PE = pe;
               pacotes[nb_pacotes].flag = 0;
-              pacotes[nb_pacotes].payload[0] = wd[3][2];
-              pacotes[nb_pacotes].payload[1] = wd[3][3];
+              pacotes[nb_pacotes].payload[0] = wd[4][1];
+              pacotes[nb_pacotes].payload[1] = wd[4][2];
               pacotes[nb_pacotes].payload[2] = '\0';
               sscanf(wd[0], "%d", &(pacotes[nb_pacotes].stamp) );
 
-              if( !strcasecmp(wd[4], "brALL_SERVICE"))
+              if( !strcasecmp(wd[5], "BR_SVC_ALL"))
                  { sscanf(wd[1], "%d", &d );
                    if(d != pe)
                         { //printf( "ALL %2d from:%s  %s t:%s\n", pe, wd[1], wd[3], wd[0]);
@@ -216,7 +216,7 @@ int main(int argc, char *argv[])
                          }
                  }
 
-               if( !strcasecmp(wd[4], "brTgt_SERVICE"))
+               if( !strcasecmp(wd[5], "BR_SVC_TGT"))
                  { sscanf(wd[2], "%d", &d );
                      if(d == pe)
                         { //printf( "TGT %2d from:%s  %s t:%s\n", pe, wd[1], wd[3], wd[0]);
