@@ -43,6 +43,7 @@ module BrLiteRouter
     typedef struct packed {
         br_data_t data;
         br_port_t origin;
+        logic cleared;
         logic used;
         logic pending;
     } cam_line_t;
@@ -51,6 +52,7 @@ module BrLiteRouter
 
     logic                         clear_local;
     cam_idx_t                     clear_index;
+    cam_idx_t                     source_index;
 
     logic 	   [63:0] 		      clear_tick;
     cam_line_t [(CAM_SIZE - 1):0] cam;
@@ -67,7 +69,8 @@ module BrLiteRouter
         IN_TEST_SPACE, 
         IN_WRITE, 
         IN_CLEAR, 
-        IN_ACK
+        IN_ACK,
+        IN_ACK_LOCAL
     } in_fsm_t;
 
     in_fsm_t in_state;
@@ -119,7 +122,7 @@ module BrLiteRouter
             is_in_idx[i] = (
                 (cam[i].data.source == flit_i[selected_port].source) 
                 && (cam[i].data.id  == flit_i[selected_port].id)
-                && cam[i].used /* Addition not present in VHDL */
+                && (cam[i].used || cam[i].cleared)
             );
         end
     end
@@ -151,12 +154,12 @@ module BrLiteRouter
                         in_next_state = IN_INIT;
                     end
                 end
-                else if (flit_i[selected_port].service == BR_SVC_CLEAR && is_in_idx != '0) begin
-                    /**
-                     * @todo
-                     * SystemC implementation uses !pending too
-                     * Try without this condition for now
-                     */
+                else if (
+                    is_in_idx != '0 
+                    && flit_i[selected_port].service  == BR_SVC_CLEAR 
+                    && cam[source_index].data.service != BR_SVC_CLEAR 
+                    // && !cam[source_index].pending /* Maybe this line is not needed */
+                ) begin
                     in_next_state = IN_CLEAR;
                 end
                 else begin
@@ -164,9 +167,10 @@ module BrLiteRouter
                     in_next_state = IN_ACK;
                 end
             end
-            IN_WRITE,
+            IN_WRITE:       in_next_state = (selected_port == BR_LOCAL) ? IN_ACK_LOCAL : IN_ACK;
             IN_CLEAR:       in_next_state = IN_ACK;
-            IN_ACK:         in_next_state = !req_i[selected_port] ? IN_INIT : IN_ACK; /* Do we really need to wait for req down? */
+            IN_ACK_LOCAL:   in_next_state = !req_i[selected_port] ? IN_INIT : IN_ACK_LOCAL;
+            IN_ACK:         in_next_state = IN_INIT;
             default:        in_next_state = IN_INIT;
         endcase
     end
@@ -184,7 +188,7 @@ module BrLiteRouter
     /* Ack control */
     always_comb begin
         ack_o = '0;
-        ack_o[selected_port] = (in_state == IN_ACK);
+        ack_o[selected_port] = (in_state inside {IN_ACK, IN_ACK_LOCAL});
     end
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -375,7 +379,6 @@ module BrLiteRouter
     end
 
     /* Index to propagate */
-    cam_idx_t source_index;
     always_comb begin
         source_index = '0;
         for (int i = 0; i < CAM_SIZE; i++) begin
@@ -400,14 +403,6 @@ module BrLiteRouter
 
     /* Automatic clear trigger */
     logic can_clear;
-    /**
-     * @todo
-     * SystemC uses clear_local instead of wrote_local
-     * Probably SystemC implementation is wrong, as the original VHDL uses clear_local
-     *
-     * Also, SystemC is not verifying if cam is pending
-     * Maybe the pending check can cause a dead line in CAM
-     */
     assign can_clear = clear_local && in_state == IN_INIT && out_state == OUT_INIT && !cam[clear_index].pending;
 
     /* Local write signalizing */
@@ -433,7 +428,7 @@ module BrLiteRouter
             if (can_clear)
                 clear_local <= 1'b0;
             else if (wrote_local && tick_cnt_i >= clear_tick)
-                clear_local <= 1'b1; // SystemC also unsets wrote_local
+                clear_local <= 1'b1;
         end
     end
 
@@ -441,7 +436,7 @@ module BrLiteRouter
     always_ff @(posedge clk_i or negedge rst_ni) begin
         if (!rst_ni) begin
             for (int i = 0; i < CAM_SIZE; i++) begin
-                /* No need to zero the memory itself */
+                cam[i].cleared <= 1'b0;
                 cam[i].used <= 1'b0;
                 cam[i].pending <= 1'b0;
             end
@@ -451,28 +446,24 @@ module BrLiteRouter
                 IN_WRITE: begin
                     cam[free_index].data    <= flit_i[selected_port];
                     cam[free_index].origin  <= selected_port;
+                    cam[free_index].cleared <= 1'b0;
                     cam[free_index].used    <= 1'b1;
                     cam[free_index].pending <= 1'b1;
                 end
                 IN_CLEAR: begin
-                    /**
-                     * @todo
-                     * Check if when ignoring pending line there is a possibility of not propagating a clear
-                     * thus ending up with a 'dead' cam line
-                     */
-                    if (cam[source_index].data.service != BR_SVC_CLEAR && !cam[source_index].pending) begin
-                        /* Avoid the insertion of clean in an already clean line */
                         cam[source_index].data.service <= BR_SVC_CLEAR;
                         cam[source_index].pending      <= 1'b1;
                     end
-                end
                 default: ;
             endcase
 
             case (out_state)
                 OUT_ACK_ALL:   cam[selected_index].pending <= 1'b0;
                 OUT_ACK_LOCAL: cam[selected_index].pending <= 1'b0;
-                OUT_CLEAR:     cam[selected_index].used    <= 1'b0;
+                OUT_CLEAR: begin
+                    cam[selected_index].used    <= 1'b0;
+                    cam[selected_index].cleared <= 1'b1;
+                end
                 default: ;
             endcase
 
