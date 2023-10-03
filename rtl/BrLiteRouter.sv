@@ -150,7 +150,7 @@ module BrLiteRouter
                         in_next_state = IN_WRITE;
                     end
                     else begin
-                        $error("[%d] PE %X -- CAM FULL", $time(), ADDRESS);
+                        $error("[%d] PE %X -- CAM FULL", $time, ADDRESS);
                         in_next_state = IN_INIT;
                     end
                 end
