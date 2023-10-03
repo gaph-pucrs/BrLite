@@ -8,4 +8,5 @@ vlog scenario.sv
 vlog testbench.sv
 
 vsim work.testbench -voptargs=+acc
-do wave2.do
+#do wave.do
+run -all
