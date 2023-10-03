@@ -150,7 +150,7 @@ module BrLiteRouter
                         in_next_state = IN_WRITE;
                     end
                     else begin
-                        $display("++++++++++++++++++++++++++++++++++  CAM CHEIA  SEND LOCAL:  Address: %d", ADDRESS);
+                        $error("[%d] PE %X -- CAM FULL", $time(), ADDRESS);
                         in_next_state = IN_INIT;
                     end
                 end
@@ -294,18 +294,18 @@ module BrLiteRouter
             OUT_LOCAL: begin
                 out_next_state = ack_i[BR_LOCAL] ? OUT_ACK_LOCAL : OUT_LOCAL;
                 
-                if (ack_i[BR_LOCAL]) begin
-                    $display(
-                        ">>>>>>>>>>>>>>>>> SEND LOCAL: [[%h %h %h %h]] %h %h Address: %h",
-                        cam[selected_index].data.source[15:8],
-                        cam[selected_index].data.source[7:0],
-                        cam[selected_index].data.target[15:8],
-                        cam[selected_index].data.target[7:0],
-                        cam[selected_index].data.service,
-                        cam[selected_index].data.payload,
-                        ADDRESS
-                    );
-                end
+                // if (ack_i[BR_LOCAL]) begin
+                //     $display(
+                //         ">>>>>>>>>>>>>>>>> SEND LOCAL: [[%h %h %h %h]] %h %h Address: %h",
+                //         cam[selected_index].data.source[15:8],
+                //         cam[selected_index].data.source[7:0],
+                //         cam[selected_index].data.target[15:8],
+                //         cam[selected_index].data.target[7:0],
+                //         cam[selected_index].data.service,
+                //         cam[selected_index].data.payload,
+                //         ADDRESS
+                //     );
+                // end
             end
             OUT_ACK_ALL: begin
                 if (acked_ports == '1)
@@ -340,21 +340,21 @@ module BrLiteRouter
     end
 
     /* Clear report */
-    always_ff @(posedge clk_i or negedge rst_ni) begin
-        if (rst_ni && out_state == OUT_CLEAR) begin
-            if (cam[selected_index].data.target == ADDRESS && cam[selected_index].used) begin
-                $display(
-                    "************************************************************ end CLEAR: %x %x %x %x %x %x", 
-                    cam[selected_index].data.source[15:8], 
-                    cam[selected_index].data.source[7:0], 
-                    cam[selected_index].data.target[15:8], 
-                    cam[selected_index].data.target[7:0], 
-                    cam[selected_index].data.service, 
-                    cam[selected_index].data.payload
-                );
-            end
-        end
-    end
+    // always_ff @(posedge clk_i or negedge rst_ni) begin
+    //     if (rst_ni && out_state == OUT_CLEAR) begin
+    //         if (cam[selected_index].data.target == ADDRESS && cam[selected_index].used) begin
+    //             $display(
+    //                 "************************************************************ end CLEAR: %x %x %x %x %x %x", 
+    //                 cam[selected_index].data.source[15:8], 
+    //                 cam[selected_index].data.source[7:0], 
+    //                 cam[selected_index].data.target[15:8], 
+    //                 cam[selected_index].data.target[7:0], 
+    //                 cam[selected_index].data.service, 
+    //                 cam[selected_index].data.payload
+    //             );
+    //         end
+    //     end
+    // end
 
     /* Output connection */
     always_comb begin
