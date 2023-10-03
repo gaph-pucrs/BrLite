@@ -2,7 +2,7 @@ transcript
 xcelium.d
 *.log
 *.history
-teste
+parser
 *.txt
 *.wlf
 work
