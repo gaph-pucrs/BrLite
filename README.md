@@ -26,7 +26,7 @@ After sorting, it is possible to run the parser to view a summary of the results
 make run-parser
 ```
 
-To run everything, simulating with modelsing:
+To run everything, simulating with Modelsim:
 ```
 make
 ```
