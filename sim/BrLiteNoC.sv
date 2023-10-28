@@ -32,7 +32,7 @@ module BrLiteNoC
 		for (gen_x = 0; gen_x < X_CNT; gen_x++) begin
 			for (gen_y = 0; gen_y < Y_CNT; gen_y++) begin
 				localparam index = gen_y*X_CNT + gen_x;
-				BrLiteRouter #(.ADDRESS(gen_x << 8 | gen_y))
+				BrLiteRouter #(.SEQ_ADDRESS(index))
 				Router
 				(
 					.clk_i			(clk_i),

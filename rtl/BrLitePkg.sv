@@ -19,8 +19,8 @@ package BrLitePkg;
 
 	typedef struct packed {
 		logic 	[31:0] 	payload;
-		logic 	[15:0] 	target;
-		logic 	[15:0] 	source;
+		logic 	[15:0] 	seq_target;
+		logic 	[15:0] 	seq_source;
 		logic 	[15:0] 	producer;
 		logic 	[ 7:0] 	ksvc;
 		logic 	[ 4:0] 	id;

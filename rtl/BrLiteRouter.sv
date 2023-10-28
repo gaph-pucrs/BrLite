@@ -14,7 +14,7 @@
 module BrLiteRouter
     import BrLitePkg::*;
 #(
-    parameter logic [15:0] ADDRESS = 0,
+    parameter logic [15:0] SEQ_ADDRESS = 0,
     parameter 			   CAM_SIZE = 8,
     parameter 			   CLEAR_TICKS = 150
 )
@@ -120,7 +120,7 @@ module BrLiteRouter
     always_comb begin
         for (int i = 0; i < CAM_SIZE; i++) begin
             is_in_idx[i] = (
-                (cam[i].data.source == flit_i[selected_port].source) 
+                (cam[i].data.seq_source == flit_i[selected_port].seq_source) 
                 && (cam[i].data.id  == flit_i[selected_port].id)
                 && (cam[i].used || cam[i].cleared)
             );
@@ -150,7 +150,7 @@ module BrLiteRouter
                         in_next_state = IN_WRITE;
                     end
                     else begin
-                        $error("[%d] PE %X -- CAM FULL", $time, ADDRESS);
+                        $error("[%d] PE %d -- CAM FULL", $time, SEQ_ADDRESS);
                         in_next_state = IN_INIT;
                     end
                 end
@@ -267,7 +267,7 @@ module BrLiteRouter
                 OUT_PROPAGATE: begin
                     acked_ports[BR_LOCAL] 	<= !(
                         cam[selected_index].data.service == BR_SVC_ALL 
-                        && cam[selected_index].data.source != ADDRESS
+                        && cam[selected_index].data.seq_source != SEQ_ADDRESS
                     );
                     acked_ports[cam[selected_index].origin] <= 1'b1; /* Should be after LOCAL because ORIGIN can be local */
                 end
@@ -286,7 +286,7 @@ module BrLiteRouter
             OUT_SERVICE:     
                 out_next_state = (
                     (cam[selected_index].data.service == BR_SVC_TGT || cam[selected_index].data.service == BR_SVC_MON)
-                    && cam[selected_index].data.target == ADDRESS
+                    && cam[selected_index].data.seq_target == SEQ_ADDRESS
                 ) 
                 ? OUT_LOCAL 
                 : OUT_PROPAGATE;
@@ -296,14 +296,12 @@ module BrLiteRouter
                 
                 // if (ack_i[BR_LOCAL]) begin
                 //     $display(
-                //         ">>>>>>>>>>>>>>>>> SEND LOCAL: [[%h %h %h %h]] %h %h Address: %h",
-                //         cam[selected_index].data.source[15:8],
-                //         cam[selected_index].data.source[7:0],
-                //         cam[selected_index].data.target[15:8],
-                //         cam[selected_index].data.target[7:0],
+                //         ">>>>>>>>>>>>>>>>> SEND LOCAL: [[%d %d]] %h %h Address: %d",
+                //         cam[selected_index].data.seq_source,
+                //         cam[selected_index].data.seq_target,
                 //         cam[selected_index].data.service,
                 //         cam[selected_index].data.payload,
-                //         ADDRESS
+                //         SEQ_ADDRESS
                 //     );
                 // end
             end
@@ -342,13 +340,11 @@ module BrLiteRouter
     /* Clear report */
     // always_ff @(posedge clk_i or negedge rst_ni) begin
     //     if (rst_ni && out_state == OUT_CLEAR) begin
-    //         if (cam[selected_index].data.target == ADDRESS && cam[selected_index].used) begin
+    //         if (cam[selected_index].data.seq_target == SEQ_ADDRESS && cam[selected_index].used) begin
     //             $display(
-    //                 "************************************************************ end CLEAR: %x %x %x %x %x %x", 
-    //                 cam[selected_index].data.source[15:8], 
-    //                 cam[selected_index].data.source[7:0], 
-    //                 cam[selected_index].data.target[15:8], 
-    //                 cam[selected_index].data.target[7:0], 
+    //                 "************************************************************ end CLEAR: %d %d %x %x", 
+    //                 cam[selected_index].data.seq_source,
+    //                 cam[selected_index].data.seq_target,
     //                 cam[selected_index].data.service, 
     //                 cam[selected_index].data.payload
     //             );

@@ -70,14 +70,14 @@ module testbench ();
 		end else begin
 			for (int i = 0; i < NPKTS; i++) begin
 				if (tick_cnt >= services[i].timestamp && !useds[i] && !busy[services[i].source]) begin
-					req_i[services[i].source] 			<= 1'b1;
-					flit_i[services[i].source].source 	<= to_xy(services[i].source);
-					flit_i[services[i].source].target 	<= to_xy(services[i].target);
-					flit_i[services[i].source].payload 	<= services[i].payload;
-					flit_i[services[i].source].service 	<= br_svc_t'(services[i].service);
-					flit_i[services[i].source].id 		<= ids[services[i].source];
-					ids[services[i].source] 			<= ids[services[i].source] + 1'b1;
-					useds[i] 							<= 1'b1;
+					req_i[services[i].source] 				<= 1'b1;
+					flit_i[services[i].source].seq_source 	<= services[i].source;
+					flit_i[services[i].source].seq_target	<= services[i].target;
+					flit_i[services[i].source].payload 		<= services[i].payload;
+					flit_i[services[i].source].service 		<= br_svc_t'(services[i].service);
+					flit_i[services[i].source].id 			<= ids[services[i].source];
+					ids[services[i].source] 				<= ids[services[i].source] + 1'b1;
+					useds[i] 								<= 1'b1;
 
 					$display("[%0t] Injected - services[%0d] - timestamp = %0d - source %0d - target %0d", $time, i, services[i].timestamp, services[i].source, services[i].target);
 					/*$display(
@@ -125,7 +125,7 @@ module testbench ();
 					"%s %d   from: %d  %0H  t:%d", 
 					flit_o[gen_i].service == BR_SVC_ALL ? "ALL" : "TGT", 
 					gen_i,
-					((flit_o[gen_i].source >> 8) + ((flit_o[gen_i].source & 16'h00FF)*X_CNT)), 
+					flit_o[gen_i].seq_source,
 					flit_o[gen_i].payload,
 					tick_cnt
 				);
