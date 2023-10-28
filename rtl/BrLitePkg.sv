@@ -9,11 +9,12 @@ package BrLitePkg;
 		BR_LOCAL
 	} br_port_t;
 
-	localparam NSVC = 3;
+	localparam NSVC = 4;
 	typedef enum logic [($clog2(NSVC) - 1):0] {
 		BR_SVC_ALL,
+		BR_SVC_CLEAR,
 		BR_SVC_TGT,
-		BR_SVC_CLEAR
+		BR_SVC_MON
 	} br_svc_t;
 
 	typedef struct packed {

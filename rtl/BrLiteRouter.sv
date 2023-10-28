@@ -143,7 +143,7 @@ module BrLiteRouter
             IN_ARBITRATION: in_next_state = IN_TEST_SPACE;
             IN_TEST_SPACE: begin
                 if (
-                    (flit_i[selected_port].service == BR_SVC_ALL || flit_i[selected_port].service == BR_SVC_TGT) 
+                    (flit_i[selected_port].service != BR_SVC_CLEAR) 
                     && is_in_idx == '0
                 ) begin
                     if (!cam_full) begin
@@ -285,7 +285,7 @@ module BrLiteRouter
             OUT_ARBITRATION: out_next_state = OUT_SERVICE;
             OUT_SERVICE:     
                 out_next_state = (
-                    cam[selected_index].data.service == BR_SVC_TGT 
+                    (cam[selected_index].data.service == BR_SVC_TGT || cam[selected_index].data.service == BR_SVC_MON)
                     && cam[selected_index].data.target == ADDRESS
                 ) 
                 ? OUT_LOCAL 
