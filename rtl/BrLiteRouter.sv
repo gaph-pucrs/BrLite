@@ -27,14 +27,14 @@ module BrLiteRouter
     output logic					 local_busy_o,
 
     /* Data inputs */
-    input  br_data_t [(NPORT - 1):0] flit_i,
-    input  logic	 [(NPORT - 1):0] req_i,
-    output logic 	 [(NPORT - 1):0] ack_o,
+    input  br_data_t [(BR_NPORT - 1):0] flit_i,
+    input  logic	 [(BR_NPORT - 1):0] req_i,
+    output logic 	 [(BR_NPORT - 1):0] ack_o,
 
     /* Data outputs */
-    output br_data_t [(NPORT - 1):0] flit_o,
-    output logic	 [(NPORT - 1):0] req_o,
-    input  logic	 [(NPORT - 1):0] ack_i
+    output br_data_t [(BR_NPORT - 1):0] flit_o,
+    output logic	 [(BR_NPORT - 1):0] req_o,
+    input  logic	 [(BR_NPORT - 1):0] ack_i
 );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -82,7 +82,7 @@ module BrLiteRouter
     /* Input port Arbitration (round-robin) */
     always_comb begin
         next_port = selected_port;
-        for (int i = 0; i < NPORT; i++) begin
+        for (int i = 0; i < BR_NPORT; i++) begin
             if (i <= selected_port)
                 continue;
 
@@ -93,7 +93,7 @@ module BrLiteRouter
         end
 
         if (next_port == selected_port) begin
-            for (int i = 0; i < NPORT; i++) begin
+            for (int i = 0; i < BR_NPORT; i++) begin
                 if (i >= selected_port)
                     continue;
 
@@ -257,7 +257,7 @@ module BrLiteRouter
     end
 
     /* Ack input control */
-    logic [(NPORT - 1):0] acked_ports;
+    logic [(BR_NPORT - 1):0] acked_ports;
     always_ff @(posedge clk_i or negedge rst_ni) begin
         if (!rst_ni) begin
             acked_ports <= '0;
@@ -354,7 +354,7 @@ module BrLiteRouter
 
     /* Output connection */
     always_comb begin
-        for (int i = 0; i < NPORT; i++)
+        for (int i = 0; i < BR_NPORT; i++)
             flit_o[i] = cam[selected_index].data;
     end
     

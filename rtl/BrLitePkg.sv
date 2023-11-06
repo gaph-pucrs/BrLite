@@ -1,7 +1,7 @@
 package BrLitePkg;
 
-	localparam NPORT = 5;
-	typedef enum logic [($clog2(NPORT) - 1):0] {
+	parameter BR_NPORT = 5;
+	typedef enum logic [($clog2(BR_NPORT) - 1):0] {
 		BR_EAST,
 		BR_WEST,
 		BR_NORTH,
