@@ -1,3 +1,5 @@
+default: all
+
 all: sim-vsim run-sort run-parser
 
 sim-vsim:
@@ -17,3 +19,5 @@ clean:
 	@rm -f wave.do
 	@rm -f brNoC_log.txt
 	@rm -f parser
+
+.PHONY: default all sim-vsim run-sort run-parser parser clean
