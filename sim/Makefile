@@ -3,9 +3,6 @@ all: sim-vsim run-sort run-parser
 sim-vsim:
 	@vsim -c -do sim.do
 
-sim-xrun:
-	@xrun -f sim.xrun
-
 run-sort:
 	@./sortlog.py
 
