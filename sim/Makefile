@@ -14,6 +14,6 @@ parser: parser.c
 
 clean:
 	@rm -rf *.wlf transcript modelsim.ini work
-	@rm -rf *.log *.history xcelium.d
+	@rm -f wave.do
 	@rm -f brNoC_log.txt
 	@rm -f parser
