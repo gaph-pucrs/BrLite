@@ -1,3 +1,5 @@
+`include "../rtl/BrLitePkg.sv"
+
 module BrLiteNoC
 	import BrLitePkg::*;
 #(
@@ -20,12 +22,12 @@ module BrLiteNoC
 	output logic	 [X_CNT * Y_CNT - 1:0] busy_o
 );
 	localparam PE_CNT = X_CNT * Y_CNT;
-	br_data_t	[NPORT - 1:0] flit_i_sig [PE_CNT - 1:0];
-	logic		[NPORT - 1:0] req_i_sig  [PE_CNT - 1:0];
-	logic		[NPORT - 1:0] ack_o_sig  [PE_CNT - 1:0];
-	br_data_t 	[NPORT - 1:0] flit_o_sig [PE_CNT - 1:0];
-	logic		[NPORT - 1:0] req_o_sig  [PE_CNT - 1:0];
-	logic		[NPORT - 1:0] ack_i_sig  [PE_CNT - 1:0];
+	br_data_t	[BR_NPORT - 1:0] flit_i_sig [PE_CNT - 1:0];
+	logic		[BR_NPORT - 1:0] req_i_sig  [PE_CNT - 1:0];
+	logic		[BR_NPORT - 1:0] ack_o_sig  [PE_CNT - 1:0];
+	br_data_t 	[BR_NPORT - 1:0] flit_o_sig [PE_CNT - 1:0];
+	logic		[BR_NPORT - 1:0] req_o_sig  [PE_CNT - 1:0];
+	logic		[BR_NPORT - 1:0] ack_i_sig  [PE_CNT - 1:0];
 
 	genvar gen_x, gen_y;
 	generate

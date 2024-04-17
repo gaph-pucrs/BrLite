@@ -11,6 +11,8 @@
  * @brief Light BrNoC router module -- Removed backtrack (unicast)
  */
 
+`include "BrLitePkg.sv"
+
 module BrLiteRouter
     import BrLitePkg::*;
 #(

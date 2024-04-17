@@ -1,6 +1,4 @@
 `include "../rtl/BrLitePkg.sv"
-`include "../rtl/BrLiteRouter.sv"
-`include "BrLiteNoC.sv"
 `include "scenario.sv"
 
 module testbench ();

@@ -1,3 +1,6 @@
+`ifndef BR_LITE_PKG
+`define BR_LITE_PKG
+
 package BrLitePkg;
 
 	parameter BR_NPORT = 5;
@@ -28,3 +31,5 @@ package BrLitePkg;
 	} br_data_t;
 
 endpackage
+
+`endif

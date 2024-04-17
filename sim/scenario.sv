@@ -1,3 +1,8 @@
+`ifndef SCENARIO_PKG
+`define SCENARIO_PKG
+
+`include "../rtl/BrLitePkg.sv"
+
 package scenario;
 	import BrLitePkg::*;
 
@@ -53,3 +58,5 @@ package scenario;
 	};
 
 endpackage
+
+`endif
