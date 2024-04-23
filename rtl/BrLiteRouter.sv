@@ -313,7 +313,7 @@ module BrLiteRouter
                 else
                     out_next_state = OUT_ACK_ALL;
             end
-            OUT_ACK_LOCAL:   out_next_state = !ack_i[BR_LOCAL] ? OUT_INIT : OUT_ACK_LOCAL;
+            OUT_ACK_LOCAL:   out_next_state = OUT_INIT;
             OUT_CLEAR:       out_next_state = OUT_INIT;
             default:         out_next_state = OUT_INIT;
         endcase
