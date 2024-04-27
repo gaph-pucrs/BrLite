@@ -152,17 +152,27 @@ module BrLiteRouter
                         in_next_state = IN_WRITE;
                     end
                     else begin
-                        $error("[%d] PE %d -- CAM FULL", $time, SEQ_ADDRESS);
                         in_next_state = IN_INIT;
+                        $display(
+                            "[%7.3f] [BrLiteRouter] PE seq. %d with full CAM. Deadlock may occur.", 
+                            $time()/1_000_000.0, 
+                            SEQ_ADDRESS
+                        );
                     end
                 end
                 else if (
                     is_in_idx != '0 
                     && flit_i[selected_port].service  == BR_SVC_CLEAR 
                     && cam[source_index].data.service != BR_SVC_CLEAR 
-                    // && !cam[source_index].pending /* Maybe this line is not needed */
                 ) begin
                     in_next_state = IN_CLEAR;
+                    if (cam[source_index].pending) begin
+                        $display(
+                            "[%7.3f] [BrLiteRouter] PE seq. %d clearing pending CAM entry. Data loss may occur.", 
+                            $time()/1_000_000.0, 
+                            SEQ_ADDRESS
+                        );
+                    end
                 end
                 else begin
                     /* Ignore */
