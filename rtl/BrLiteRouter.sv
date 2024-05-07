@@ -17,8 +17,8 @@ module BrLiteRouter
     import BrLitePkg::*;
 #(
     parameter logic [15:0] SEQ_ADDRESS = 0,
-    parameter 			   CAM_SIZE = 8,
-    parameter 			   CLEAR_TICKS = 150
+    parameter 			   CAM_SIZE    = 8,
+    parameter 			   CLEAR_TICKS = 180
 )
 (
     input  logic 					 clk_i,
@@ -164,15 +164,9 @@ module BrLiteRouter
                     is_in_idx != '0 
                     && flit_i[selected_port].service  == BR_SVC_CLEAR 
                     && cam[source_index].data.service != BR_SVC_CLEAR 
+                    && !cam[source_index].pending
                 ) begin
                     in_next_state = IN_CLEAR;
-                    if (cam[source_index].pending) begin
-                        $display(
-                            "[%7.3f] [BrLiteRouter] PE seq. %d clearing pending CAM entry. Data loss may occur.", 
-                            $time()/1_000_000.0, 
-                            SEQ_ADDRESS
-                        );
-                    end
                 end
                 else begin
                     /* Ignore */
