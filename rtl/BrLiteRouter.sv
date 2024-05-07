@@ -196,15 +196,13 @@ module BrLiteRouter
 ////////////////////////////////////////////////////////////////////////////////
 
     /* Out FSM states */
-    typedef enum logic [7:0] {
-        OUT_INIT        = 8'b00000001, 
-        OUT_ARBITRATION = 8'b00000010, 
-        OUT_SERVICE     = 8'b00000100, 
-        OUT_PROPAGATE   = 8'b00001000, 
-        OUT_LOCAL       = 8'b00010000, 
-        OUT_CLEAR       = 8'b00100000, 
-        OUT_ACK_ALL     = 8'b01000000, 
-        OUT_ACK_LOCAL   = 8'b10000000
+    typedef enum logic [5:0] {
+        OUT_INIT        = 6'b000001, 
+        OUT_ARBITRATION = 6'b000010, 
+        OUT_SERVICE     = 6'b000100, 
+        OUT_PROPAGATE   = 6'b001000, 
+        OUT_CLEAR       = 6'b010000, 
+        OUT_ACK         = 6'b100000
     } out_fsm_t;
 
     out_fsm_t out_state;
@@ -256,6 +254,27 @@ module BrLiteRouter
         end
     end
 
+    logic propagate_all;
+    assign propagate_all = (cam[selected_index].data.service == BR_SVC_ALL);
+
+    logic propagate_routers;
+    assign propagate_clr =  (cam[selected_index].data.service == BR_SVC_CLEAR);
+
+    logic propagate_tgt;
+    assign propagate_tgt = (cam[selected_index].data.seq_target != SEQ_ADDRESS);
+
+    logic receive_tgt;
+    assign receive_tgt = (
+        cam[selected_index].data.service != BR_SVC_CLEAR && 
+        cam[selected_index].data.seq_target == SEQ_ADDRESS
+    );
+
+    logic ack_ports;
+    assign ack_ports = !(propagate_all || propagate_clr || propagate_tgt);
+
+    logic ack_local;
+    assign ack_local = !(propagate_all || receive_tgt);
+
     /* Ack input control */
     logic [(BR_NPORT - 1):0] acked_ports;
     always_ff @(posedge clk_i or negedge rst_ni) begin
@@ -265,13 +284,11 @@ module BrLiteRouter
         else begin
             case (out_state)
                 OUT_PROPAGATE: begin
-                    acked_ports[BR_LOCAL] 	<= !(
-                        cam[selected_index].data.service == BR_SVC_ALL 
-                        && cam[selected_index].data.seq_source != SEQ_ADDRESS
-                    );
+                    acked_ports[(BR_NPORT - 2):0]           <= {(BR_NPORT - 1){ack_ports}};
+                    acked_ports[BR_LOCAL] 	                <= ack_local;
                     acked_ports[cam[selected_index].origin] <= 1'b1; /* Should be after LOCAL because ORIGIN can be local */
                 end
-                OUT_ACK_ALL:   acked_ports <= acked_ports | ack_i;
+                OUT_ACK:       acked_ports <= acked_ports | ack_i;
                 default:       acked_ports <= '0;
             endcase
         end
@@ -281,39 +298,35 @@ module BrLiteRouter
     out_fsm_t out_next_state;
     always_comb begin
         case (out_state)
-            OUT_INIT:        out_next_state = (is_pending != '0 && !clear_local) ? OUT_ARBITRATION : OUT_INIT;
-            OUT_ARBITRATION: out_next_state = OUT_SERVICE;
+            OUT_INIT:
+                out_next_state = (is_pending != '0 && !clear_local) 
+                    ? OUT_ARBITRATION 
+                    : OUT_INIT;
+            OUT_ARBITRATION: 
+                out_next_state = OUT_SERVICE;
             OUT_SERVICE:     
-                out_next_state = (
-                    (cam[selected_index].data.service == BR_SVC_TGT || cam[selected_index].data.service == BR_SVC_MON)
-                    && cam[selected_index].data.seq_target == SEQ_ADDRESS
-                ) 
-                ? OUT_LOCAL 
-                : OUT_PROPAGATE;
-            OUT_PROPAGATE:   out_next_state = OUT_ACK_ALL;
-            OUT_LOCAL: begin
-                out_next_state = ack_i[BR_LOCAL] ? OUT_ACK_LOCAL : OUT_LOCAL;
-                
-                // if (ack_i[BR_LOCAL]) begin
-                //     $display(
-                //         ">>>>>>>>>>>>>>>>> SEND LOCAL: [[%d %d]] %h %h Address: %d",
-                //         cam[selected_index].data.seq_source,
-                //         cam[selected_index].data.seq_target,
-                //         cam[selected_index].data.service,
-                //         cam[selected_index].data.payload,
-                //         SEQ_ADDRESS
-                //     );
-                // end
+                out_next_state = OUT_PROPAGATE;
+            OUT_PROPAGATE:
+                out_next_state = OUT_ACK;
+            OUT_ACK: begin
+                if (acked_ports == '1) begin
+                    out_next_state = propagate_clr ? OUT_CLEAR : OUT_INIT;
+                    // if (ack_local) begin
+                    //     $display(
+                    //         ">>>>>>>>>>>>>>>>> SEND LOCAL: [[%d %d]] %h %h Address: %d",
+                    //         cam[selected_index].data.seq_source,
+                    //         cam[selected_index].data.seq_target,
+                    //         cam[selected_index].data.service,
+                    //         cam[selected_index].data.payload,
+                    //         SEQ_ADDRESS
+                    //     );
+                    // end
+                end
+                else begin
+                    out_next_state = OUT_ACK;
+                end
             end
-            OUT_ACK_ALL: begin
-                if (acked_ports == '1)
-                    out_next_state = (cam[selected_index].data.service == BR_SVC_CLEAR) ? OUT_CLEAR : OUT_INIT;
-                else
-                    out_next_state = OUT_ACK_ALL;
-            end
-            OUT_ACK_LOCAL:   out_next_state = OUT_INIT;
-            OUT_CLEAR:       out_next_state = OUT_INIT;
-            default:         out_next_state = OUT_INIT;
+            default:         out_next_state = OUT_INIT; /* OUT_CLEAR */
         endcase
     end
 
@@ -329,10 +342,8 @@ module BrLiteRouter
 
     /* Req control */
     always_comb begin
-        req_o = '0;
         case (out_state)
-            OUT_LOCAL:   req_o[BR_LOCAL] = 1'b1;
-            OUT_ACK_ALL: req_o = ~acked_ports;
+            OUT_ACK:     req_o = ~acked_ports;
             default:     req_o = '0;
         endcase
     end
@@ -465,8 +476,10 @@ module BrLiteRouter
             endcase
 
             case (out_state)
-                OUT_ACK_ALL:   cam[selected_index].pending <= 1'b0;
-                OUT_ACK_LOCAL: cam[selected_index].pending <= 1'b0;
+                OUT_ACK: begin
+                    if (acked_ports == '1)
+                        cam[selected_index].pending <= 1'b0;
+                end
                 OUT_CLEAR: begin
                     cam[selected_index].used    <= 1'b0;
                     cam[selected_index].cleared <= 1'b1;
