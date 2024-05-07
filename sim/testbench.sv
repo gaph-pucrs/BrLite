@@ -39,7 +39,6 @@ module testbench ();
 	) noc (
 		.clk_i		(clk),
 		.rst_ni		(rst_n),
-		.tick_cnt_i	(tick_cnt),
 		.flit_i		(flit_i),
 		.req_i		(req_i),
 		.ack_o		(ack_o),

@@ -17,15 +17,14 @@ module BrLiteRouter
     import BrLitePkg::*;
 #(
     parameter logic [15:0] SEQ_ADDRESS = 0,
-    parameter 			   CAM_SIZE    = 8,
-    parameter 			   CLEAR_TICKS = 180
+    parameter 			   CAM_SIZE    = 8,     /* Power of 2 */
+    parameter 			   CLEAR_TICKS = 180    /* Up to 255  */
 )
 (
     input  logic 					 clk_i,
     input  logic 					 rst_ni,
 
     /* Router signals */
-    input  logic 	 [63:0] 		 tick_cnt_i,
     output logic					 local_busy_o,
 
     /* Data inputs */
@@ -56,23 +55,21 @@ module BrLiteRouter
     cam_idx_t                     clear_index;
     cam_idx_t                     source_index;
 
-    logic 	   [63:0] 		      clear_tick;
     cam_line_t [(CAM_SIZE - 1):0] cam;
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Input FSM
 ////////////////////////////////////////////////////////////////////////////////
 
     /* In FSM states */
-    typedef enum {
-        IN_INIT, 
-        IN_ARBITRATION, 
-        IN_TEST_SPACE, 
-        IN_WRITE, 
-        IN_CLEAR, 
-        IN_ACK,
-        IN_ACK_LOCAL
+    typedef enum logic [6:0] {
+        IN_INIT        = 7'b0000001, 
+        IN_ARBITRATION = 7'b0000010, 
+        IN_TEST_SPACE  = 7'b0000100, 
+        IN_WRITE       = 7'b0001000, 
+        IN_CLEAR       = 7'b0010000, 
+        IN_ACK         = 7'b0100000,
+        IN_ACK_LOCAL   = 7'b1000000
     } in_fsm_t;
 
     in_fsm_t in_state;
@@ -392,13 +389,24 @@ module BrLiteRouter
     end
 
     /* CAM clear control generation */
+    logic [7:0] clear_tick;
     always_ff @(posedge clk_i or negedge rst_ni) begin
         if (!rst_ni) begin
             clear_tick  <= '0;
+        end
+        else begin
+            if (clear_tick != '0)
+                clear_tick <= clear_tick + 1'b1;
+            else if (in_state == IN_WRITE && selected_port == BR_LOCAL)
+                clear_tick  <= (255 - CLEAR_TICKS);
+        end
+    end
+
+    always_ff @(posedge clk_i or negedge rst_ni) begin
+        if (!rst_ni) begin
             clear_index <= '0;
         end
         else if (in_state == IN_WRITE && selected_port == BR_LOCAL) begin
-            clear_tick  <= tick_cnt_i + CLEAR_TICKS;
             clear_index <= free_index;
         end
     end
@@ -429,7 +437,7 @@ module BrLiteRouter
         else begin
             if (can_clear)
                 clear_local <= 1'b0;
-            else if (wrote_local && tick_cnt_i >= clear_tick)
+            else if (wrote_local && clear_tick == '0)
                 clear_local <= 1'b1;
         end
     end

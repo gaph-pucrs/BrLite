@@ -10,8 +10,6 @@ module BrLiteNoC
 	input  logic 	 				 clk_i,
 	input  logic 	 				 rst_ni,
 
-	input  logic 	 [63:0]			 tick_cnt_i,
-
 	input  br_data_t [X_CNT * Y_CNT - 1:0] flit_i,
 	input  logic	 [X_CNT * Y_CNT - 1:0] req_i,
 	output logic	 [X_CNT * Y_CNT - 1:0] ack_o,
@@ -39,7 +37,6 @@ module BrLiteNoC
 				(
 					.clk_i			(clk_i),
 					.rst_ni			(rst_ni),
-					.tick_cnt_i		(tick_cnt_i),
 					.local_busy_o	(busy_o[index]),
 					.flit_i			(flit_i_sig[index]),
 					.req_i			(req_i_sig[index]),
