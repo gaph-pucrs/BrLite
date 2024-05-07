@@ -257,7 +257,7 @@ module BrLiteRouter
     logic propagate_all;
     assign propagate_all = (cam[selected_index].data.service == BR_SVC_ALL);
 
-    logic propagate_routers;
+    logic propagate_clr;
     assign propagate_clr =  (cam[selected_index].data.service == BR_SVC_CLEAR);
 
     logic propagate_tgt;
