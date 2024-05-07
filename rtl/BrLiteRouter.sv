@@ -62,14 +62,13 @@ module BrLiteRouter
 ////////////////////////////////////////////////////////////////////////////////
 
     /* In FSM states */
-    typedef enum logic [6:0] {
-        IN_INIT        = 7'b0000001, 
-        IN_ARBITRATION = 7'b0000010, 
-        IN_TEST_SPACE  = 7'b0000100, 
-        IN_WRITE       = 7'b0001000, 
-        IN_CLEAR       = 7'b0010000, 
-        IN_ACK         = 7'b0100000,
-        IN_ACK_LOCAL   = 7'b1000000
+    typedef enum logic [5:0] {
+        IN_INIT        = 6'b000001, 
+        IN_ARBITRATION = 6'b000010, 
+        IN_TEST_SPACE  = 6'b000100, 
+        IN_WRITE       = 6'b001000, 
+        IN_CLEAR       = 6'b010000, 
+        IN_ACK         = 6'b100000
     } in_fsm_t;
 
     in_fsm_t in_state;
@@ -170,11 +169,9 @@ module BrLiteRouter
                     in_next_state = IN_ACK;
                 end
             end
-            IN_WRITE:       in_next_state = (selected_port == BR_LOCAL) ? IN_ACK_LOCAL : IN_ACK;
+            IN_WRITE,
             IN_CLEAR:       in_next_state = IN_ACK;
-            IN_ACK_LOCAL:   in_next_state = !req_i[selected_port] ? IN_INIT : IN_ACK_LOCAL;
-            IN_ACK:         in_next_state = IN_INIT;
-            default:        in_next_state = IN_INIT;
+            default:        in_next_state = IN_INIT;    /* IN_ACK */
         endcase
     end
 
@@ -191,7 +188,7 @@ module BrLiteRouter
     /* Ack control */
     always_comb begin
         ack_o = '0;
-        ack_o[selected_port] = (in_state inside {IN_ACK, IN_ACK_LOCAL});
+        ack_o[selected_port] = (in_state == IN_ACK);
     end
 
 ////////////////////////////////////////////////////////////////////////////////
