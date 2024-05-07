@@ -199,15 +199,15 @@ module BrLiteRouter
 ////////////////////////////////////////////////////////////////////////////////
 
     /* Out FSM states */
-    typedef enum {
-        OUT_INIT, 
-        OUT_ARBITRATION, 
-        OUT_SERVICE, 
-        OUT_PROPAGATE, 
-        OUT_LOCAL, 
-        OUT_CLEAR, 
-        OUT_ACK_ALL, 
-        OUT_ACK_LOCAL
+    typedef enum logic [7:0] {
+        OUT_INIT        = 8'b00000001, 
+        OUT_ARBITRATION = 8'b00000010, 
+        OUT_SERVICE     = 8'b00000100, 
+        OUT_PROPAGATE   = 8'b00001000, 
+        OUT_LOCAL       = 8'b00010000, 
+        OUT_CLEAR       = 8'b00100000, 
+        OUT_ACK_ALL     = 8'b01000000, 
+        OUT_ACK_LOCAL   = 8'b10000000
     } out_fsm_t;
 
     out_fsm_t out_state;
