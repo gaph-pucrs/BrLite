@@ -1,3 +1,16 @@
+/**
+ * BrLite
+ * @file BrLitePkg.sv
+ *
+ * @author Angelo Elias Dal Zotto (angelo.dalzotto@edu.pucrs.br)
+ * GAPH - Hardware Design Support Group (https://corfu.pucrs.br)
+ * PUCRS - Pontifical Catholic University of Rio Grande do Sul (http://pucrs.br/)
+ *
+ * @date September 2023
+ *
+ * @brief BrLite package
+ */
+
 `ifndef BR_LITE_PKG
 `define BR_LITE_PKG
 
