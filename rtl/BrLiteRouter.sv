@@ -140,34 +140,12 @@ module BrLiteRouter
             IN_INIT: 		in_next_state = (req_i != '0 && !clear_local) ? IN_ARBITRATION : IN_INIT;
             IN_ARBITRATION: in_next_state = IN_TEST_SPACE;
             IN_TEST_SPACE: begin
-                if (
-                    (flit_i[selected_port].service != BR_SVC_CLEAR) 
-                    && is_in_idx == '0
-                ) begin
-                    if (!cam_full) begin
-                        in_next_state = IN_WRITE;
-                    end
-                    else begin
-                        in_next_state = IN_INIT;
-                        $display(
-                            "[%7.3f] [BrLiteRouter] PE seq. %d with full CAM. Deadlock may occur.", 
-                            $time()/1_000_000.0, 
-                            SEQ_ADDRESS
-                        );
-                    end
-                end
-                else if (
-                    is_in_idx != '0 
-                    && flit_i[selected_port].service  == BR_SVC_CLEAR 
-                    && cam[source_index].data.service != BR_SVC_CLEAR 
-                    && !cam[source_index].pending
-                ) begin
-                    in_next_state = IN_CLEAR;
-                end
-                else begin
-                    /* Ignore */
+                if (!flit_i[selected_port].clear && is_in_idx == '0)
+                    in_next_state = !cam_full ? IN_WRITE : IN_INIT;
+                else if (flit_i[selected_port].clear && is_in_idx != '0 && !cam[source_index].data.clear)
+                    in_next_state = !cam[source_index].pending ? IN_CLEAR : IN_INIT;
+                else /* Ignore */
                     in_next_state = IN_ACK;
-                end
             end
             IN_WRITE,
             IN_CLEAR:       in_next_state = IN_ACK;
@@ -196,13 +174,12 @@ module BrLiteRouter
 ////////////////////////////////////////////////////////////////////////////////
 
     /* Out FSM states */
-    typedef enum logic [5:0] {
-        OUT_INIT        = 6'b000001, 
-        OUT_ARBITRATION = 6'b000010, 
-        OUT_SERVICE     = 6'b000100, 
-        OUT_PROPAGATE   = 6'b001000, 
-        OUT_CLEAR       = 6'b010000, 
-        OUT_ACK         = 6'b100000
+    typedef enum logic [4:0] {
+        OUT_INIT        = 5'b00001, 
+        OUT_ARBITRATION = 5'b00010, 
+        OUT_PROPAGATE   = 5'b00100, 
+        OUT_CLEAR       = 5'b01000, 
+        OUT_ACK         = 5'b10000
     } out_fsm_t;
 
     out_fsm_t out_state;
@@ -254,27 +231,6 @@ module BrLiteRouter
         end
     end
 
-    logic propagate_all;
-    assign propagate_all = (cam[selected_index].data.service == BR_SVC_ALL);
-
-    logic propagate_clr;
-    assign propagate_clr =  (cam[selected_index].data.service == BR_SVC_CLEAR);
-
-    logic propagate_tgt;
-    assign propagate_tgt = (cam[selected_index].data.seq_target != SEQ_ADDRESS);
-
-    logic receive_tgt;
-    assign receive_tgt = (
-        cam[selected_index].data.service != BR_SVC_CLEAR && 
-        cam[selected_index].data.seq_target == SEQ_ADDRESS
-    );
-
-    logic ack_ports;
-    assign ack_ports = !(propagate_all || propagate_clr || propagate_tgt);
-
-    logic ack_local;
-    assign ack_local = !(propagate_all || receive_tgt);
-
     /* Ack input control */
     logic [(BR_NPORT - 1):0] acked_ports;
     always_ff @(posedge clk_i or negedge rst_ni) begin
@@ -284,8 +240,8 @@ module BrLiteRouter
         else begin
             case (out_state)
                 OUT_PROPAGATE: begin
-                    acked_ports[(BR_NPORT - 2):0]           <= {(BR_NPORT - 1){ack_ports}};
-                    acked_ports[BR_LOCAL] 	                <= ack_local;
+                    acked_ports[(BR_NPORT - 2):0]           <= '0;
+                    acked_ports[BR_LOCAL] 	                <= cam[selected_index].data.clear; /* Do not send clear to local port */
                     acked_ports[cam[selected_index].origin] <= 1'b1; /* Should be after LOCAL because ORIGIN can be local */
                 end
                 OUT_ACK:       acked_ports <= acked_ports | ack_i;
@@ -303,30 +259,17 @@ module BrLiteRouter
                     ? OUT_ARBITRATION 
                     : OUT_INIT;
             OUT_ARBITRATION: 
-                out_next_state = OUT_SERVICE;
-            OUT_SERVICE:     
                 out_next_state = OUT_PROPAGATE;
             OUT_PROPAGATE:
                 out_next_state = OUT_ACK;
             OUT_ACK: begin
-                if (acked_ports == '1) begin
-                    out_next_state = propagate_clr ? OUT_CLEAR : OUT_INIT;
-                    // if (ack_local) begin
-                    //     $display(
-                    //         ">>>>>>>>>>>>>>>>> SEND LOCAL: [[%d %d]] %h %h Address: %d",
-                    //         cam[selected_index].data.seq_source,
-                    //         cam[selected_index].data.seq_target,
-                    //         cam[selected_index].data.service,
-                    //         cam[selected_index].data.payload,
-                    //         SEQ_ADDRESS
-                    //     );
-                    // end
-                end
-                else begin
+                if (acked_ports == '1)
+                    out_next_state = cam[selected_index].data.clear ? OUT_CLEAR : OUT_INIT;
+                else
                     out_next_state = OUT_ACK;
-                end
             end
-            default:         out_next_state = OUT_INIT; /* OUT_CLEAR */
+            default: /* OUT_CLEAR */
+                out_next_state = OUT_INIT;
         endcase
     end
 
@@ -347,21 +290,6 @@ module BrLiteRouter
             default:     req_o = '0;
         endcase
     end
-
-    /* Clear report */
-    // always_ff @(posedge clk_i or negedge rst_ni) begin
-    //     if (rst_ni && out_state == OUT_CLEAR) begin
-    //         if (cam[selected_index].data.seq_target == SEQ_ADDRESS && cam[selected_index].used) begin
-    //             $display(
-    //                 "************************************************************ end CLEAR: %d %d %x %x", 
-    //                 cam[selected_index].data.seq_source,
-    //                 cam[selected_index].data.seq_target,
-    //                 cam[selected_index].data.service, 
-    //                 cam[selected_index].data.payload
-    //             );
-    //         end
-    //     end
-    // end
 
     /* Output connection */
     always_comb begin
@@ -455,7 +383,7 @@ module BrLiteRouter
         if (!rst_ni) begin
             for (int i = 0; i < CAM_SIZE; i++) begin
                 cam[i].cleared <= 1'b0;
-                cam[i].used <= 1'b0;
+                cam[i].used    <= 1'b0;
                 cam[i].pending <= 1'b0;
             end
         end
@@ -469,9 +397,9 @@ module BrLiteRouter
                     cam[free_index].pending <= 1'b1;
                 end
                 IN_CLEAR: begin
-                        cam[source_index].data.service <= BR_SVC_CLEAR;
-                        cam[source_index].pending      <= 1'b1;
-                    end
+                    cam[source_index].data.clear <= 1'b1;
+                    cam[source_index].pending    <= 1'b1;
+                end
                 default: ;
             endcase
 
@@ -489,9 +417,19 @@ module BrLiteRouter
 
             /* clear_local freezes both FSM */
             if (can_clear) begin
-                cam[clear_index].data.service <= BR_SVC_CLEAR;
-                cam[clear_index].pending      <= 1'b1;
+                cam[clear_index].data.clear <= 1'b1;
+                cam[clear_index].pending    <= 1'b1;
             end
+        end
+    end
+
+    always_ff @(posedge clk_i) begin
+        if (in_state == IN_TEST_SPACE && in_next_state == IN_INIT) begin
+            $display(
+                "[%7.3f] [BrLiteRouter] PE seq. %d with full CAM. Deadlock may occur.", 
+                $time()/1_000_000.0, 
+                SEQ_ADDRESS
+            );
         end
     end
 
