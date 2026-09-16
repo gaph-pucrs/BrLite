@@ -423,6 +423,7 @@ module BrLiteRouter
         end
     end
 
+`ifndef SYNTH
     always_ff @(posedge clk_i) begin
         if (in_state == IN_TEST_SPACE && in_next_state == IN_INIT) begin
             $display(
@@ -432,5 +433,6 @@ module BrLiteRouter
             );
         end
     end
+`endif
 
 endmodule
